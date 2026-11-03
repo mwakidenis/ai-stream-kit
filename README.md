@@ -169,6 +169,27 @@ npm run lint
 
 Built on standard WHATWG Web Streams, so no polyfills or runtime adapters are required.
 
+### Cloudflare Workers
+
+This package ships an ESM build (`dist/index.mjs`) and a `browser` field pointing to it, so Wrangler's bundler resolves it correctly in Workers. Since it uses only WHATWG streams (no `fs`, `http`, or Node-only APIs), it deploys without polyfills:
+
+```ts
+// wrangler.toml
+# no special flags needed; the package is ESM-first
+
+import { NDJSONTransform } from '@mwakidenis/ai-stream-kit';
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    const ndjson = new NDJSONTransform<{ message: string }>();
+    const stream = request.body?.pipeThrough(new TextDecoderStream())
+      .pipeThrough(ndjson.stream) as ReadableStream<{ message: string }>;
+
+    return new Response(stream, { headers: { 'content-type': 'application/x-ndjson' } });
+  },
+};
+```
+
 ## License
 
 MIT
