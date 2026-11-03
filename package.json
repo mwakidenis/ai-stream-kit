@@ -1,6 +1,6 @@
 {
   "name": "@mwakidenis/ai-stream-kit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Lightweight NDJSON & SSE / Token Stream Transformer for AI, edge runtimes, and real-time APIs",
   "license": "MIT",
   "type": "module",
