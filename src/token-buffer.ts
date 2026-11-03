@@ -1,14 +1,15 @@
 export interface TokenBufferOptions {
   /** Emit once the accumulated buffer reaches this many characters. Default: 512. */
   maxSize?: number;
-  /** Emit after this many milliseconds of silence since the last chunk. Default: 50. */
+  /** Emit after this many milliseconds of silence since the last chunk. Disabled by default (no artificial delay). Set a value > 0 to enable time-window flushing. */
   maxWait?: number;
 }
 
 /**
  * TokenBufferTransform batches rapid incoming token/text chunks into slightly
- * larger chunks to prevent UI rendering bottlenecks. Emits when either the
- * size threshold or the time window elapses, whichever comes first.
+ * larger chunks to prevent UI rendering bottlenecks. Emits when the size
+ * threshold is reached, after an optional time window of silence, or on stream
+ * end. No artificial delay is introduced unless maxWait is explicitly set.
  */
 export class TokenBufferTransform {
   private buffer = '';
@@ -25,14 +26,14 @@ export class TokenBufferTransform {
 
   get stream(): TransformStream<string, string> {
     const maxSize = this.options.maxSize ?? 512;
-    const maxWait = this.options.maxWait ?? 50;
+    const maxWait = this.options.maxWait;
 
     const scheduleFlush = () => {
       if (this.timer) clearTimeout(this.timer);
       this.timer = setTimeout(() => {
         this.timer = undefined;
         this.doFlush(this.controller!);
-      }, maxWait);
+      }, maxWait!);
     };
 
     return new TransformStream<string, string>({
@@ -43,10 +44,14 @@ export class TokenBufferTransform {
 
         if (this.size >= maxSize) {
           this.doFlush(controller);
+          if (this.timer) {
+            clearTimeout(this.timer);
+            this.timer = undefined;
+          }
           return;
         }
 
-        if (!this.timer) scheduleFlush();
+        if (maxWait && !this.timer) scheduleFlush();
       },
       flush: (controller) => {
         this.controller = controller;

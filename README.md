@@ -57,7 +57,7 @@ for await (const chunk of stream) {
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `maxSize` | `number` | `512` | Emit once the accumulated buffer reaches this many characters. |
-| `maxWait` | `number` | `50` | Emit after this many ms of silence since the last chunk. |
+| `maxWait` | `number` | `undefined` (disabled) | Emit after this many ms of silence since the last chunk. **No artificial delay by default** — set a value > 0 to enable time-window flushing. |
 
 ### SSEParserTransform
 
