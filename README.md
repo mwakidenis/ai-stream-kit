@@ -190,6 +190,38 @@ export default {
 };
 ```
 
+### Cloudflare Pages Functions
+
+Install the dependency in your Pages project, then import it directly in a Pages Function. The `browser` field resolves to the ESM build, so no bundler configuration is needed:
+
+```bash
+# in your Pages project
+npm install @mwakidenis/ai-stream-kit
+```
+
+```ts
+// functions/stream.ts
+import { SSEParserTransform, NDJSONTransform } from '@mwakidenis/ai-stream-kit';
+
+export const onRequest = async (context: {
+  request: Request;
+  env: Record<string, unknown>;
+  waitUntil: (promise: Promise<unknown>) => void;
+}): Promise<Response> => {
+  const sse = new SSEParserTransform();
+  const stream = context.request.body
+    ?.pipeThrough(new TextDecoderStream())
+    .pipeThrough(sse.stream) as ReadableStream<{ event: string; data: unknown }>;
+
+  return new Response(stream, {
+    headers: { 'content-type': 'application/x-ndjson' },
+  });
+};
+```
+
+Because the package uses only WHATWG Web Streams, it runs in Pages Functions without polyfills or Node.js shims.
+
 ## License
 
 MIT
+
